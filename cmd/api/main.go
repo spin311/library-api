@@ -3,10 +3,19 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/spin311/library-api/internal/app/handlers"
+	"github.com/spin311/library-api/internal/repository/postgres"
+	"github.com/spin311/library-api/pkg/config"
+
+	"net/http"
+
 	"log"
 )
+
+const serverAddress = ":8080"
 
 func main() {
 	err := godotenv.Load()
@@ -22,7 +31,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(db)
+	postgres.SetDB(db)
 
 	err = db.Ping()
 	if err != nil {
@@ -30,4 +45,12 @@ func main() {
 	}
 
 	fmt.Println("Successfully connected!")
+
+	r := mux.NewRouter()
+
+	//User Routes
+	r.HandleFunc("/users", handlers.CreateUser).Methods("POST")
+	r.HandleFunc("/users", handlers.GetUsers).Methods("GET")
+
+	log.Fatal(http.ListenAndServe(serverAddress, r))
 }
