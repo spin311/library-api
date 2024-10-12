@@ -6,3 +6,8 @@ type Book struct {
 	Quantity      int    `json:"quantity"`
 	BorrowedCount int    `json:"borrowed_count"`
 }
+
+type BookResponse struct {
+	Title          string `json:"title"`
+	AvailableCount int    `json:"quantity"`
+}

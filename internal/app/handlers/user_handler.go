@@ -27,7 +27,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode("User created successfully")
 }
 
-func GetUsers(w http.ResponseWriter, r *http.Request) {
+func GetUsers(w http.ResponseWriter, _ *http.Request) {
 	users, err := services.GetUsers()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -42,7 +42,7 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
+	id, err := strconv.Atoi(vars["userId"])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

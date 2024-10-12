@@ -5,22 +5,19 @@ import (
 	"github.com/spin311/library-api/internal/repository/models"
 )
 
-var db *sql.DB
+var dbUser *sql.DB
 
-func SetDB(database *sql.DB) {
-	db = database
+func SetUserDB(database *sql.DB) {
+	dbUser = database
 }
 
 func InsertUser(user models.UserResponse) error {
-	_, err := db.Query(`INSERT INTO users (FIRST_NAME, LAST_NAME) VALUES ($1, $2)`, user.FirstName, user.LastName)
-	if err != nil {
-		return err
-	}
-	return nil
+	_, err := dbUser.Query(`INSERT INTO users (FIRST_NAME, LAST_NAME) VALUES ($1, $2)`, user.FirstName, user.LastName)
+	return err
 }
 
 func GetUsers() ([]models.UserResponse, error) {
-	rows, err := db.Query(`SELECT FIRST_NAME, LAST_NAME FROM users`)
+	rows, err := dbUser.Query(`SELECT FIRST_NAME, LAST_NAME FROM users`)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +44,7 @@ func GetUsers() ([]models.UserResponse, error) {
 
 func GetUser(id int) (models.UserResponse, error) {
 	var user models.UserResponse
-	row := db.QueryRow(`SELECT FIRST_NAME, LAST_NAME FROM users WHERE ID= $1`, id)
+	row := dbUser.QueryRow(`SELECT FIRST_NAME, LAST_NAME FROM users WHERE ID= $1`, id)
 	if err := row.Scan(&user.FirstName, &user.LastName); err != nil {
 		return user, err
 	}

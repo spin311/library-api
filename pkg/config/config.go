@@ -1,6 +1,9 @@
 package config
 
 import (
+	"database/sql"
+	"fmt"
+	"github.com/spin311/library-api/internal/repository/postgres"
 	"log"
 	"os"
 
@@ -15,7 +18,7 @@ type Config struct {
 	DbName     string
 }
 
-func GetConfig() *Config {
+func getConfig() *Config {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatalf("Error loading .env file")
@@ -28,4 +31,33 @@ func GetConfig() *Config {
 		DbPassword: os.Getenv("PASSWORD"),
 		DbName:     os.Getenv("DBNAME"),
 	}
+}
+
+func SetDbs(database *sql.DB) {
+	postgres.SetUserDB(database)
+	postgres.SetBookDB(database)
+}
+
+func InitDatabase() *sql.DB {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+	cfg := getConfig()
+
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		cfg.DbHost, cfg.DbPort, cfg.DbUser, cfg.DbPassword, cfg.DbName)
+	db, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		panic(err)
+	}
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Successfully connected!")
+
+	return db
+
 }

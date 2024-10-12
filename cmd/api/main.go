@@ -2,14 +2,10 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/spin311/library-api/internal/app/handlers"
-	"github.com/spin311/library-api/internal/repository/postgres"
 	"github.com/spin311/library-api/pkg/config"
-
 	"net/http"
 
 	"log"
@@ -18,40 +14,30 @@ import (
 const serverAddress = ":8080"
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
-	cfg := config.GetConfig()
 
-	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		cfg.DbHost, cfg.DbPort, cfg.DbUser, cfg.DbPassword, cfg.DbName)
-	db, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		panic(err)
-	}
+	db := config.InitDatabase()
 	defer func(db *sql.DB) {
 		err := db.Close()
 		if err != nil {
 			panic(err)
 		}
 	}(db)
-	postgres.SetDB(db)
 
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("Successfully connected!")
-
+	config.SetDbs(db)
 	r := mux.NewRouter()
 
 	//User Routes
 	r.HandleFunc("/users", handlers.CreateUser).Methods("POST")
 	r.HandleFunc("/users", handlers.GetUsers).Methods("GET")
-	r.HandleFunc("/users/{id}", handlers.GetUser).Methods("GET")
+	r.HandleFunc("/users/{userId}", handlers.GetUser).Methods("GET")
+
+	//Book Routes
+	r.HandleFunc("/books", handlers.GetBooks).Methods("GET")
+	r.HandleFunc("/books/{bookId}", handlers.GetBook).Methods("GET")
+
+	//TODO maybe path /users/{userId}/books/{bookId}
+	r.HandleFunc("/books/borrow", handlers.BorrowBook).Methods("POST")
+	//r.HandleFunc("books/return", handlers.ReturnBook).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(serverAddress, r))
 }
