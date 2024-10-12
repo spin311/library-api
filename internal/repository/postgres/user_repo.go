@@ -11,7 +11,7 @@ func SetDB(database *sql.DB) {
 	db = database
 }
 
-func InsertUser(user models.User) error {
+func InsertUser(user models.UserResponse) error {
 	_, err := db.Query(`INSERT INTO users (FIRST_NAME, LAST_NAME) VALUES ($1, $2)`, user.FirstName, user.LastName)
 	if err != nil {
 		return err
@@ -19,7 +19,7 @@ func InsertUser(user models.User) error {
 	return nil
 }
 
-func GetUsers() ([]models.User, error) {
+func GetUsers() ([]models.UserResponse, error) {
 	rows, err := db.Query(`SELECT FIRST_NAME, LAST_NAME FROM users`)
 	if err != nil {
 		return nil, err
@@ -31,9 +31,9 @@ func GetUsers() ([]models.User, error) {
 		}
 	}(rows)
 
-	var users []models.User
+	var users []models.UserResponse
 	for rows.Next() {
-		var user models.User
+		var user models.UserResponse
 		if err := rows.Scan(&user.FirstName, &user.LastName); err != nil {
 			return nil, err
 		}
@@ -43,4 +43,13 @@ func GetUsers() ([]models.User, error) {
 		return nil, err
 	}
 	return users, nil
+}
+
+func GetUser(id int) (models.UserResponse, error) {
+	var user models.UserResponse
+	row := db.QueryRow(`SELECT FIRST_NAME, LAST_NAME FROM users WHERE ID= $1`, id)
+	if err := row.Scan(&user.FirstName, &user.LastName); err != nil {
+		return user, err
+	}
+	return user, nil
 }

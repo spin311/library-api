@@ -51,6 +51,7 @@ func main() {
 	//User Routes
 	r.HandleFunc("/users", handlers.CreateUser).Methods("POST")
 	r.HandleFunc("/users", handlers.GetUsers).Methods("GET")
+	r.HandleFunc("/users/{id}", handlers.GetUser).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(serverAddress, r))
 }
