@@ -55,3 +55,18 @@ func GetBook(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
+
+func ReturnBook(w http.ResponseWriter, r *http.Request) {
+	userId, userErr := strconv.Atoi(r.URL.Query().Get("user_id"))
+	bookId, bookErr := strconv.Atoi(r.URL.Query().Get("book_id"))
+	if userErr != nil || bookErr != nil {
+		http.Error(w, "Invalid user_id or book_id parameter", http.StatusBadRequest)
+		return
+	}
+	err := services.ReturnBook(userId, bookId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = json.NewEncoder(w).Encode("book returned successfully")
+}

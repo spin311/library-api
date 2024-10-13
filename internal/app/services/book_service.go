@@ -43,3 +43,21 @@ func GetBook(id int) (models.BookResponse, error) {
 	bookResponse.AvailableCount = book.Quantity - book.BorrowedCount
 	return bookResponse, nil
 }
+
+func ReturnBook(userId int, bookId int) error {
+	if userId <= 0 || bookId <= 0 {
+		return errors.New("invalid identifier values")
+	}
+	book, err := postgres.GetBook(bookId)
+	if err != nil {
+		return err
+	}
+	if book.BorrowedCount == 0 {
+		return errors.New("no borrowed books")
+	}
+	err = postgres.ReturnBook(userId, bookId, book.BorrowedCount-1)
+	if err != nil {
+		return err
+	}
+	return nil
+}

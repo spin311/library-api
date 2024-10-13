@@ -35,9 +35,8 @@ func main() {
 	r.HandleFunc("/books", handlers.GetBooks).Methods("GET")
 	r.HandleFunc("/books/{bookId}", handlers.GetBook).Methods("GET")
 
-	//TODO maybe path /users/{userId}/books/{bookId}
 	r.HandleFunc("/books/borrow", handlers.BorrowBook).Methods("POST")
-	//r.HandleFunc("books/return", handlers.ReturnBook).Methods("POST")
+	r.HandleFunc("/books/return", handlers.ReturnBook).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(serverAddress, r))
 }
