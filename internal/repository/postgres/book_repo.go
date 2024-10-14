@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/spin311/library-api/internal/repository/models"
-	"log"
 )
 
 var dbBook *sql.DB
@@ -15,7 +14,18 @@ func SetBookDB(database *sql.DB) {
 }
 
 func GetBooks() ([]models.BookResponse, error) {
-	rows, err := dbBook.Query(`SELECT TITLE, QUANTITY, BORROWED_COUNT FROM books`)
+	stmt, err := dbBook.Prepare(`SELECT TITLE, QUANTITY, BORROWED_COUNT FROM books`)
+	if err != nil {
+		return nil, err
+	}
+	defer func(stmt *sql.Stmt) {
+		err := stmt.Close()
+		if err != nil {
+			return
+		}
+	}(stmt)
+
+	rows, err := stmt.Query()
 	if err != nil {
 		return nil, err
 	}
@@ -25,6 +35,7 @@ func GetBooks() ([]models.BookResponse, error) {
 			return
 		}
 	}(rows)
+
 	var books []models.BookResponse
 	for rows.Next() {
 		var book models.BookResponse
@@ -35,18 +46,31 @@ func GetBooks() ([]models.BookResponse, error) {
 		book.AvailableCount = quantity - borrowedCount
 		books = append(books, book)
 	}
+
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
+
 	return books, nil
 }
 
 func GetBook(bookId int) (models.Book, error) {
 	var book models.Book
-	count := dbBook.QueryRow(`SELECT ID, TITLE, QUANTITY, BORROWED_COUNT FROM books WHERE id = $1`, bookId)
-	if err := count.Scan(&book.ID, &book.Title, &book.Quantity, &book.BorrowedCount); err != nil {
+	stmt, err := dbBook.Prepare(`SELECT ID, TITLE, QUANTITY, BORROWED_COUNT FROM books WHERE id = $1`)
+	if err != nil {
 		return book, err
 	}
+	defer func(stmt *sql.Stmt) {
+		err := stmt.Close()
+		if err != nil {
+			return
+		}
+	}(stmt)
+
+	if err := stmt.QueryRow(bookId).Scan(&book.ID, &book.Title, &book.Quantity, &book.BorrowedCount); err != nil {
+		return book, err
+	}
+
 	return book, nil
 }
 
@@ -54,11 +78,22 @@ func BorrowBook(userId int, bookId int, newCount int) error {
 	ctx := context.Background()
 	tx, err := dbBook.BeginTx(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 
-	_, err = tx.ExecContext(ctx, `INSERT INTO borrow (user_id, book_id) VALUES ($1, $2)`, userId, bookId)
+	stmtBorrow, err := tx.PrepareContext(ctx, `INSERT INTO borrow (user_id, book_id) VALUES ($1, $2)`)
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	defer func(stmtBorrow *sql.Stmt) {
+		err := stmtBorrow.Close()
+		if err != nil {
+			return
+		}
+	}(stmtBorrow)
+
+	_, err = stmtBorrow.Exec(userId, bookId)
 	if err != nil {
 		_ = tx.Rollback()
 		return err
@@ -78,7 +113,18 @@ func BorrowBook(userId int, bookId int, newCount int) error {
 }
 
 func updateBookCountWithTx(tx *sql.Tx, bookId int, newCount int) error {
-	_, execErr := tx.ExecContext(context.Background(), `UPDATE books SET borrowed_count = $1 WHERE id = $2`, newCount, bookId)
+	stmtUpdate, err := tx.PrepareContext(context.Background(), `UPDATE books SET borrowed_count = $1 WHERE id = $2`)
+	if err != nil {
+		return err
+	}
+	defer func(stmtUpdate *sql.Stmt) {
+		err := stmtUpdate.Close()
+		if err != nil {
+			return
+		}
+	}(stmtUpdate)
+
+	_, execErr := stmtUpdate.Exec(newCount, bookId)
 	return execErr
 }
 
@@ -86,11 +132,10 @@ func ReturnBook(userId int, bookId int, newCount int) error {
 	ctx := context.Background()
 	tx, err := dbBook.BeginTx(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 
-	result, err := tx.ExecContext(ctx, `
+	stmtReturn, err := tx.PrepareContext(ctx, `
 		WITH borrowed AS (
 			SELECT id 
 			  FROM borrow
@@ -103,7 +148,19 @@ func ReturnBook(userId int, bookId int, newCount int) error {
 		UPDATE borrow
 			   SET returned_at = CURRENT_TIMESTAMP
 		 WHERE id IN (SELECT id FROM borrowed)
-	`, bookId, userId)
+	`)
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	defer func(stmtReturn *sql.Stmt) {
+		err := stmtReturn.Close()
+		if err != nil {
+			return
+		}
+	}(stmtReturn)
+
+	result, err := stmtReturn.Exec(bookId, userId)
 	if err != nil {
 		_ = tx.Rollback()
 		return err

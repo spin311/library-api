@@ -18,11 +18,14 @@ type Config struct {
 	DbName     string
 }
 
-func getConfig() *Config {
+func init() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatalf("Error loading .env file")
 	}
+}
+
+func getConfig() *Config {
 
 	return &Config{
 		DbHost:     os.Getenv("HOST"),
@@ -38,11 +41,7 @@ func SetDbs(database *sql.DB) {
 	postgres.SetBookDB(database)
 }
 
-func InitDatabase() *sql.DB {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
+func InitDatabase() (*sql.DB, error) {
 	cfg := getConfig()
 
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
@@ -50,14 +49,17 @@ func InitDatabase() *sql.DB {
 		cfg.DbHost, cfg.DbPort, cfg.DbUser, cfg.DbPassword, cfg.DbName)
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	err = db.Ping()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	fmt.Println("Successfully connected!")
+	fmt.Println("Successfully connected to database!")
 
-	return db
+	return db, nil
+}
 
+func GetEnvString(key string) string {
+	return os.Getenv(key)
 }

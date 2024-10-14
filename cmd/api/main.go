@@ -6,20 +6,20 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/spin311/library-api/internal/app/handlers"
 	"github.com/spin311/library-api/pkg/config"
-	"net/http"
-
 	"log"
+	"net/http"
 )
-
-const serverAddress = ":8080"
 
 func main() {
 
-	db := config.InitDatabase()
+	db, err := config.InitDatabase()
+	if err != nil {
+		log.Fatalf("Error initializing database: %v", err)
+	}
 	defer func(db *sql.DB) {
 		err := db.Close()
 		if err != nil {
-			panic(err)
+			log.Fatalf("Error closing database: %v", err)
 		}
 	}(db)
 
@@ -35,8 +35,9 @@ func main() {
 	r.HandleFunc("/books", handlers.GetBooks).Methods("GET")
 	r.HandleFunc("/books/{bookId}", handlers.GetBook).Methods("GET")
 
-	r.HandleFunc("/books/borrow", handlers.BorrowBook).Methods("POST")
-	r.HandleFunc("/books/return", handlers.ReturnBook).Methods("POST")
+	r.HandleFunc("/users/{userId}/books/{bookId}/borrow", handlers.BorrowBook).Methods("POST")
+	r.HandleFunc("/users/{userId}/books/{bookId}/return", handlers.ReturnBook).Methods("PUT")
 
-	log.Fatal(http.ListenAndServe(serverAddress, r))
+	serverPort := config.GetEnvString("SERVER_PORT")
+	log.Fatal(http.ListenAndServe(serverPort, r))
 }

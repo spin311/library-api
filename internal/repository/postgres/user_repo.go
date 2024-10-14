@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+	"errors"
 	"github.com/spin311/library-api/internal/repository/models"
 )
 
@@ -12,7 +13,11 @@ func SetUserDB(database *sql.DB) {
 }
 
 func InsertUser(user models.UserResponse) error {
-	_, err := dbUser.Query(`INSERT INTO users (FIRST_NAME, LAST_NAME) VALUES ($1, $2)`, user.FirstName, user.LastName)
+	stmt, err := dbUser.Prepare(`INSERT INTO users (FIRST_NAME, LAST_NAME) VALUES ($1, $2)`)
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(user.FirstName, user.LastName)
 	return err
 }
 
@@ -44,8 +49,22 @@ func GetUsers() ([]models.UserResponse, error) {
 
 func GetUser(id int) (models.UserResponse, error) {
 	var user models.UserResponse
-	row := dbUser.QueryRow(`SELECT FIRST_NAME, LAST_NAME FROM users WHERE ID= $1`, id)
+	stmt, err := dbUser.Prepare(`SELECT FIRST_NAME, LAST_NAME FROM users WHERE ID = $1`)
+	if err != nil {
+		return user, err
+	}
+	defer func(stmt *sql.Stmt) {
+		err := stmt.Close()
+		if err != nil {
+			return
+		}
+	}(stmt)
+
+	row := stmt.QueryRow(id)
 	if err := row.Scan(&user.FirstName, &user.LastName); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return user, errors.New("user not found")
+		}
 		return user, err
 	}
 	return user, nil
