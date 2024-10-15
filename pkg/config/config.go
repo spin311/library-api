@@ -28,10 +28,10 @@ func init() {
 func getConfig() *Config {
 
 	return &Config{
-		DbHost:     os.Getenv("HOST"),
-		DbPort:     os.Getenv("PORT"),
-		DbUser:     os.Getenv("USER"),
-		DbPassword: os.Getenv("PASSWORD"),
+		DbHost:     os.Getenv("DBHOST"),
+		DbPort:     os.Getenv("DBPORT"),
+		DbUser:     os.Getenv("DBUSER"),
+		DbPassword: os.Getenv("DBPASSWORD"),
 		DbName:     os.Getenv("DBNAME"),
 	}
 }

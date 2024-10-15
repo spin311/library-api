@@ -12,17 +12,7 @@ func GetBooks() ([]models.BookResponse, models.HttpError) {
 }
 
 func BorrowBook(userId int, bookId int) models.HttpError {
-	book, err := postgres.GetBook(bookId)
-	if !models.IsHttpErrorEmpty(err) {
-		return err
-	}
-
-	availableBooks := book.Quantity - book.BorrowedCount
-	if availableBooks <= 0 {
-		return models.NewHttpError(fmt.Sprintf("no available copies of the book with ID %d and title '%s'", book.ID, book.Title), http.StatusBadRequest)
-	}
-
-	return postgres.BorrowBook(userId, bookId, book.BorrowedCount+1)
+	return postgres.BorrowBook(userId, bookId)
 }
 
 func GetBook(id int) (models.BookResponse, models.HttpError) {

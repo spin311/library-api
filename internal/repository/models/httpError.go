@@ -16,7 +16,7 @@ func NewHttpError(message string, statusCode int) HttpError {
 
 func NewHttpErrorFromError(message string, err error, statusCode int) HttpError {
 	return HttpError{
-		Message:    fmt.Sprintf("%s %v", message, err),
+		Message:    fmt.Sprintf("%s: %v", message, err),
 		StatusCode: statusCode,
 	}
 }

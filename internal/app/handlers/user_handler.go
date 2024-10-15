@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/spin311/library-api/internal/app/helpers"
 	"github.com/spin311/library-api/internal/app/services"
@@ -12,7 +13,7 @@ import (
 )
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
-	var user models.UserResponse
+	var user models.User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		helpers.WriteErrorResponse(w, err, http.StatusBadRequest)
@@ -30,7 +31,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode("User created successfully")
+	err = json.NewEncoder(w).Encode(fmt.Sprintf("User %s %s created successfully", user.FirstName, user.LastName))
 }
 
 func GetUsers(w http.ResponseWriter, _ *http.Request) {

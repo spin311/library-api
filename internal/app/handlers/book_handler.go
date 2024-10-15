@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/spin311/library-api/internal/app/helpers"
 	"github.com/spin311/library-api/internal/app/services"
@@ -44,7 +45,7 @@ func BorrowBook(w http.ResponseWriter, r *http.Request) {
 		helpers.WriteHttpErrorResponse(w, err)
 		return
 	}
-	jsonErr := json.NewEncoder(w).Encode("book borrowed successfully")
+	jsonErr := json.NewEncoder(w).Encode(fmt.Sprintf("book with ID %d borrowed successfully", bookId))
 	if jsonErr != nil {
 		helpers.WriteErrorResponse(w, jsonErr, http.StatusInternalServerError)
 		return
@@ -92,7 +93,7 @@ func ReturnBook(w http.ResponseWriter, r *http.Request) {
 		helpers.WriteHttpErrorResponse(w, httpError)
 		return
 	}
-	jsonError := json.NewEncoder(w).Encode("book returned successfully")
+	jsonError := json.NewEncoder(w).Encode(fmt.Sprintf("book with ID %d returned successfully", bookId))
 	if jsonError != nil {
 		helpers.WriteErrorResponse(w, jsonError, http.StatusInternalServerError)
 		return

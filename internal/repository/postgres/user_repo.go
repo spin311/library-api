@@ -14,7 +14,7 @@ func SetUserDB(database *sql.DB) {
 	dbUser = database
 }
 
-func InsertUser(user models.UserResponse) models.HttpError {
+func InsertUser(user models.User) models.HttpError {
 	stmt, err := dbUser.Prepare(`INSERT INTO users (FIRST_NAME, LAST_NAME) VALUES ($1, $2)`)
 	if err != nil {
 		return models.NewHttpErrorFromError("failed to prepare statement", err, http.StatusInternalServerError)

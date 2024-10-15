@@ -71,7 +71,7 @@ func GetBook(bookId int) (models.Book, models.HttpError) {
 
 	if err := stmt.QueryRow(bookId).Scan(&book.ID, &book.Title, &book.Quantity, &book.BorrowedCount); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return book, models.NewHttpError("book not found", http.StatusNotFound)
+			return book, models.NewHttpError(fmt.Sprintf("book with ID %d not found", bookId), http.StatusNotFound)
 		}
 		return book, models.NewHttpErrorFromError("failed to scan row", err, http.StatusInternalServerError)
 	}
@@ -79,17 +79,46 @@ func GetBook(bookId int) (models.Book, models.HttpError) {
 	return book, models.NewEmptyHttpError()
 }
 
-func BorrowBook(userId int, bookId int, newCount int) models.HttpError {
+func BorrowBook(userId int, bookId int) models.HttpError {
 	ctx := context.Background()
 	tx, err := dbBook.BeginTx(ctx, nil)
 	if err != nil {
 		return models.NewHttpErrorFromError("failed to begin transaction", err, http.StatusInternalServerError)
 	}
 
+	// Lock the row for the book to prevent race conditions
+	stmtLock, err := tx.PrepareContext(ctx, `SELECT quantity, borrowed_count FROM books WHERE id = $1 FOR UPDATE`)
+	if err != nil {
+		_ = tx.Rollback()
+		return models.NewHttpErrorFromError("failed to prepare lock statement", err, http.StatusInternalServerError)
+	}
+	defer func(stmtLock *sql.Stmt) {
+		err := stmtLock.Close()
+		if err != nil {
+			return
+		}
+	}(stmtLock)
+
+	var quantity, borrowedCount int
+	err = stmtLock.QueryRow(bookId).Scan(&quantity, &borrowedCount)
+	if err != nil {
+		_ = tx.Rollback()
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.NewHttpError(fmt.Sprintf("book with ID %d not found", bookId), http.StatusNotFound)
+		}
+		return models.NewHttpErrorFromError("failed to scan book row", err, http.StatusInternalServerError)
+	}
+
+	availableBooks := quantity - borrowedCount
+	if availableBooks <= 0 {
+		_ = tx.Rollback()
+		return models.NewHttpError(fmt.Sprintf("no available copies of the book with ID %d", bookId), http.StatusConflict)
+	}
+
 	stmtBorrow, err := tx.PrepareContext(ctx, `INSERT INTO borrow (user_id, book_id) VALUES ($1, $2)`)
 	if err != nil {
 		_ = tx.Rollback()
-		return models.NewHttpErrorFromError("failed to prepare statement", err, http.StatusInternalServerError)
+		return models.NewHttpErrorFromError("failed to prepare borrow statement", err, http.StatusInternalServerError)
 	}
 	defer func(stmtBorrow *sql.Stmt) {
 		err := stmtBorrow.Close()
@@ -101,10 +130,10 @@ func BorrowBook(userId int, bookId int, newCount int) models.HttpError {
 	_, err = stmtBorrow.Exec(userId, bookId)
 	if err != nil {
 		_ = tx.Rollback()
-		return models.NewHttpErrorFromError("failed to execute statement", err, http.StatusInternalServerError)
+		return models.NewHttpErrorFromError("failed to execute borrow statement", err, http.StatusInternalServerError)
 	}
 
-	updateErr := updateBookCountWithTx(tx, bookId, newCount)
+	updateErr := updateBookCountWithTx(tx, bookId, borrowedCount+1)
 	if updateErr != nil {
 		_ = tx.Rollback()
 		return models.NewHttpErrorFromError("failed to update book count", updateErr, http.StatusInternalServerError)

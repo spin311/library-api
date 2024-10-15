@@ -5,7 +5,7 @@ import (
 	"github.com/spin311/library-api/internal/repository/postgres"
 )
 
-func CreateUser(user models.UserResponse) models.HttpError {
+func CreateUser(user models.User) models.HttpError {
 	return postgres.InsertUser(user)
 }
 
