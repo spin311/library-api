@@ -3,10 +3,13 @@ definitions:
   models.BookResponse:
     properties:
       id:
+        description: 'example: 1'
         type: integer
       quantity:
+        description: 'example: 5'
         type: integer
       title:
+        description: 'example: The Great Gatsby'
         type: string
     type: object
   models.HttpError:
@@ -21,10 +24,13 @@ definitions:
   models.User:
     properties:
       first_name:
+        description: 'example: John'
         type: string
       id:
+        description: 'example: 1'
         type: integer
       last_name:
+        description: 'example: Doe'
         type: string
     type: object
 host: localhost:8080

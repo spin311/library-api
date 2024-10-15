@@ -325,12 +325,15 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "id": {
+                    "description": "example: 1",
                     "type": "integer"
                 },
                 "quantity": {
+                    "description": "example: 5",
                     "type": "integer"
                 },
                 "title": {
+                    "description": "example: The Great Gatsby",
                     "type": "string"
                 }
             }
@@ -352,12 +355,15 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "first_name": {
+                    "description": "example: John",
                     "type": "string"
                 },
                 "id": {
+                    "description": "example: 1",
                     "type": "integer"
                 },
                 "last_name": {
+                    "description": "example: Doe",
                     "type": "string"
                 }
             }
