@@ -2,8 +2,13 @@ package models
 
 import "fmt"
 
+// HttpError represents an error that can be returned to the client
+//
+//swagger:model
 type HttpError struct {
-	Message    string
+	//example: "invalid identifier"
+	Message string
+	//example: 400
 	StatusCode int
 }
 

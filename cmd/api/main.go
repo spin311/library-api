@@ -4,12 +4,19 @@ import (
 	"database/sql"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	_ "github.com/spin311/library-api/docs"
 	"github.com/spin311/library-api/internal/app/handlers"
 	"github.com/spin311/library-api/pkg/config"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"log"
 	"net/http"
 )
 
+// @title Library API
+// @version 1.0
+// @description Simple library API
+// @host localhost:8080
+// @BasePath /
 func main() {
 
 	db, err := config.InitDatabase()
@@ -37,6 +44,9 @@ func main() {
 
 	r.HandleFunc("/users/{userId}/books/{bookId}/borrow", handlers.BorrowBook).Methods(http.MethodPost)
 	r.HandleFunc("/users/{userId}/books/{bookId}/return", handlers.ReturnBook).Methods(http.MethodPut)
+
+	// Swagger UI
+	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 
 	serverPort := config.GetEnvString("SERVER_PORT")
 	log.Fatal(http.ListenAndServe(serverPort, r))
