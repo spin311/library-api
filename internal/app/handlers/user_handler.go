@@ -17,10 +17,10 @@ import (
 // @Tags users
 // @Accept json
 // @Produce json
-// @Param user body models.User true "User object"
+// @Param user body models.User true "User object" example({"first_name": "John", "last_name": "Doe"})
 // @Success 201 {string} string "User created successfully"
-// @Failure 400 {object} models.HttpError
-// @Failure 500 {object} models.HttpError
+// @Failure 400 {object} models.HttpError example({"message": "first_name and last_name parameters are required", "status": 400})
+// @Failure 500 {object} models.HttpError example({"message": "internal server error", "status": 500})
 // @Router /users [post]
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	var user models.User
@@ -50,7 +50,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 // @Tags users
 // @Produce json
 // @Success 200 {array} models.User
-// @Failure 500 {object} models.HttpError
+// @Failure 500 {object} models.HttpError example({"message": "internal server error", "status": 500})
 // @Router /users [get]
 func GetUsers(w http.ResponseWriter, _ *http.Request) {
 	users, httpErr := services.GetUsers()
@@ -73,11 +73,11 @@ func GetUsers(w http.ResponseWriter, _ *http.Request) {
 // @Description Get a user by user ID
 // @Tags users
 // @Produce json
-// @Param userId path int true "User ID"
+// @Param userId path int true "User ID" example(5)
 // @Success 200 {object} models.User
-// @Failure 400 {object} models.HttpError
-// @Failure 404 {object} models.HttpError
-// @Failure 500 {object} models.HttpError
+// @Failure 400 {object} models.HttpError example({"message": "invalid identifier", "status": 400})
+// @Failure 404 {object} models.HttpError example({"message": "user with ID 30 not found", "status": 404})
+// @Failure 500 {object} models.HttpError example({"message": "internal server error", "status": 500})
 // @Router /users/{userId} [get]
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
