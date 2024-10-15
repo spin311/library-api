@@ -18,9 +18,9 @@ import (
 // @Produce json
 // @Param bookId path int true "Book ID" example(1)
 // @Success 200 {object} models.BookResponse
-// @Failure 400 {object} models.HttpError example({"message": "invalid identifier", "status": 400})
-// @Failure 404 {object} models.HttpError example({"message": "book with ID 100 not found", "status": 404})
-// @Failure 500 {object} models.HttpError example({"message": "internal server error", "status": 500})
+// @Failure 400 {object} models.HttpError
+// @Failure 404 {object} models.HttpError
+// @Failure 500 {object} models.HttpError
 // @Router /books/{bookId} [get]
 func GetBook(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -51,7 +51,7 @@ func GetBook(w http.ResponseWriter, r *http.Request) {
 // @Tags books
 // @Produce json
 // @Success 200 {array} models.BookResponse
-// @Failure 500 {object} models.HttpError example({"message": "internal server error", "status": 500})
+// @Failure 500 {object} models.HttpError
 // @Router /books [get]
 func GetBooks(w http.ResponseWriter, _ *http.Request) {
 	books, err := services.GetBooks()
@@ -78,9 +78,9 @@ func GetBooks(w http.ResponseWriter, _ *http.Request) {
 // @Param userId path int true "User ID" example(5)
 // @Param bookId path int true "Book ID" example(1)
 // @Success 200 {string} string "book borrowed successfully"
-// @Failure 400 {object} models.HttpError example({"message": "invalid userId or bookId parameter", "status": 400})
-// @Failure 409 {object} models.HttpError example({"message": "no available copies of the book with ID 5", "status": 409})
-// @Failure 500 {object} models.HttpError example({"message": "internal server error", "status": 500})
+// @Failure 400 {object} models.HttpError
+// @Failure 409 {object} models.HttpError
+// @Failure 500 {object} models.HttpError
 // @Router /users/{userId}/books/{bookId}/borrow [post]
 func BorrowBook(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -115,8 +115,8 @@ func BorrowBook(w http.ResponseWriter, r *http.Request) {
 // @Param userId path int true "User ID" example(5)
 // @Param bookId path int true "Book ID" example(1)
 // @Success 200 {string} string "book returned successfully"
-// @Failure 400 {object} models.HttpError example({"message": "invalid userId or bookId parameter", "status": 400})
-// @Failure 500 {object} models.HttpError example({"message": "internal server error", "status": 500})
+// @Failure 400 {object} models.HttpError
+// @Failure 500 {object} models.HttpError
 // @Router /users/{userId}/books/{bookId}/return [put]
 func ReturnBook(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
