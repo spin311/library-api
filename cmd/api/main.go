@@ -27,16 +27,16 @@ func main() {
 	r := mux.NewRouter()
 
 	//User Routes
-	r.HandleFunc("/users", handlers.CreateUser).Methods("POST")
-	r.HandleFunc("/users", handlers.GetUsers).Methods("GET")
-	r.HandleFunc("/users/{userId}", handlers.GetUser).Methods("GET")
+	r.HandleFunc("/users", handlers.CreateUser).Methods(http.MethodPost)
+	r.HandleFunc("/users", handlers.GetUsers).Methods(http.MethodGet)
+	r.HandleFunc("/users/{userId}", handlers.GetUser).Methods(http.MethodGet)
 
 	//Book Routes
-	r.HandleFunc("/books", handlers.GetBooks).Methods("GET")
-	r.HandleFunc("/books/{bookId}", handlers.GetBook).Methods("GET")
+	r.HandleFunc("/books", handlers.GetBooks).Methods(http.MethodGet)
+	r.HandleFunc("/books/{bookId}", handlers.GetBook).Methods(http.MethodGet)
 
-	r.HandleFunc("/users/{userId}/books/{bookId}/borrow", handlers.BorrowBook).Methods("POST")
-	r.HandleFunc("/users/{userId}/books/{bookId}/return", handlers.ReturnBook).Methods("PUT")
+	r.HandleFunc("/users/{userId}/books/{bookId}/borrow", handlers.BorrowBook).Methods(http.MethodPost)
+	r.HandleFunc("/users/{userId}/books/{bookId}/return", handlers.ReturnBook).Methods(http.MethodPut)
 
 	serverPort := config.GetEnvString("SERVER_PORT")
 	log.Fatal(http.ListenAndServe(serverPort, r))

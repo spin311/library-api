@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/spin311/library-api/internal/repository/models"
+	"net/http"
 )
 
 var dbBook *sql.DB
@@ -13,10 +14,10 @@ func SetBookDB(database *sql.DB) {
 	dbBook = database
 }
 
-func GetBooks() ([]models.BookResponse, error) {
+func GetBooks() ([]models.BookResponse, models.HttpError) {
 	stmt, err := dbBook.Prepare(`SELECT TITLE, QUANTITY, BORROWED_COUNT FROM books`)
 	if err != nil {
-		return nil, err
+		return nil, models.NewHttpErrorFromError("failed to prepare statement", err, http.StatusInternalServerError)
 	}
 	defer func(stmt *sql.Stmt) {
 		err := stmt.Close()
@@ -27,7 +28,7 @@ func GetBooks() ([]models.BookResponse, error) {
 
 	rows, err := stmt.Query()
 	if err != nil {
-		return nil, err
+		return nil, models.NewHttpErrorFromError("failed to execute query", err, http.StatusInternalServerError)
 	}
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
@@ -41,24 +42,24 @@ func GetBooks() ([]models.BookResponse, error) {
 		var book models.BookResponse
 		var quantity, borrowedCount int
 		if err := rows.Scan(&book.Title, &quantity, &borrowedCount); err != nil {
-			return nil, err
+			return nil, models.NewHttpErrorFromError("failed to scan row", err, http.StatusInternalServerError)
 		}
 		book.AvailableCount = quantity - borrowedCount
 		books = append(books, book)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, models.NewHttpErrorFromError("rows error", err, http.StatusInternalServerError)
 	}
 
-	return books, nil
+	return books, models.NewEmptyHttpError()
 }
 
-func GetBook(bookId int) (models.Book, error) {
+func GetBook(bookId int) (models.Book, models.HttpError) {
 	var book models.Book
 	stmt, err := dbBook.Prepare(`SELECT ID, TITLE, QUANTITY, BORROWED_COUNT FROM books WHERE id = $1`)
 	if err != nil {
-		return book, err
+		return book, models.NewHttpErrorFromError("failed to prepare statement", err, http.StatusInternalServerError)
 	}
 	defer func(stmt *sql.Stmt) {
 		err := stmt.Close()
@@ -68,23 +69,26 @@ func GetBook(bookId int) (models.Book, error) {
 	}(stmt)
 
 	if err := stmt.QueryRow(bookId).Scan(&book.ID, &book.Title, &book.Quantity, &book.BorrowedCount); err != nil {
-		return book, err
+		if errors.Is(err, sql.ErrNoRows) {
+			return book, models.NewHttpError("book not found", http.StatusNotFound)
+		}
+		return book, models.NewHttpErrorFromError("failed to scan row", err, http.StatusInternalServerError)
 	}
 
-	return book, nil
+	return book, models.NewEmptyHttpError()
 }
 
-func BorrowBook(userId int, bookId int, newCount int) error {
+func BorrowBook(userId int, bookId int, newCount int) models.HttpError {
 	ctx := context.Background()
 	tx, err := dbBook.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return models.NewHttpErrorFromError("failed to begin transaction", err, http.StatusInternalServerError)
 	}
 
 	stmtBorrow, err := tx.PrepareContext(ctx, `INSERT INTO borrow (user_id, book_id) VALUES ($1, $2)`)
 	if err != nil {
 		_ = tx.Rollback()
-		return err
+		return models.NewHttpErrorFromError("failed to prepare statement", err, http.StatusInternalServerError)
 	}
 	defer func(stmtBorrow *sql.Stmt) {
 		err := stmtBorrow.Close()
@@ -96,20 +100,20 @@ func BorrowBook(userId int, bookId int, newCount int) error {
 	_, err = stmtBorrow.Exec(userId, bookId)
 	if err != nil {
 		_ = tx.Rollback()
-		return err
+		return models.NewHttpErrorFromError("failed to execute statement", err, http.StatusInternalServerError)
 	}
 
-	err = updateBookCountWithTx(tx, bookId, newCount)
-	if err != nil {
+	updateErr := updateBookCountWithTx(tx, bookId, newCount)
+	if updateErr != nil {
 		_ = tx.Rollback()
-		return err
+		return models.NewHttpErrorFromError("failed to update book count", updateErr, http.StatusInternalServerError)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return err
+		return models.NewHttpErrorFromError("failed to commit transaction", err, http.StatusInternalServerError)
 	}
 
-	return nil
+	return models.NewEmptyHttpError()
 }
 
 func updateBookCountWithTx(tx *sql.Tx, bookId int, newCount int) error {
@@ -125,14 +129,17 @@ func updateBookCountWithTx(tx *sql.Tx, bookId int, newCount int) error {
 	}(stmtUpdate)
 
 	_, execErr := stmtUpdate.Exec(newCount, bookId)
-	return execErr
+	if execErr != nil {
+		return execErr
+	}
+	return nil
 }
 
-func ReturnBook(userId int, bookId int, newCount int) error {
+func ReturnBook(userId int, bookId int, newCount int) models.HttpError {
 	ctx := context.Background()
 	tx, err := dbBook.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return models.NewHttpErrorFromError("failed to begin transaction", err, http.StatusInternalServerError)
 	}
 
 	stmtReturn, err := tx.PrepareContext(ctx, `
@@ -151,7 +158,7 @@ func ReturnBook(userId int, bookId int, newCount int) error {
 	`)
 	if err != nil {
 		_ = tx.Rollback()
-		return err
+		return models.NewHttpErrorFromError("failed to prepare statement", err, http.StatusInternalServerError)
 	}
 	defer func(stmtReturn *sql.Stmt) {
 		err := stmtReturn.Close()
@@ -163,28 +170,28 @@ func ReturnBook(userId int, bookId int, newCount int) error {
 	result, err := stmtReturn.Exec(bookId, userId)
 	if err != nil {
 		_ = tx.Rollback()
-		return err
+		return models.NewHttpErrorFromError("failed to execute statement", err, http.StatusInternalServerError)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		_ = tx.Rollback()
-		return err
+		return models.NewHttpErrorFromError("failed to get rows affected", err, http.StatusInternalServerError)
 	}
 	if rowsAffected == 0 {
 		_ = tx.Rollback()
-		return errors.New("no borrowed books found for this user")
+		return models.NewHttpError("no borrowed books found for this user", http.StatusBadRequest)
 	}
 
 	err = updateBookCountWithTx(tx, bookId, newCount)
 	if err != nil {
 		_ = tx.Rollback()
-		return err
+		return models.NewHttpErrorFromError("failed to update book count", err, http.StatusInternalServerError)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return err
+		return models.NewHttpErrorFromError("failed to commit transaction", err, http.StatusInternalServerError)
 	}
 
-	return nil
+	return models.NewEmptyHttpError()
 }

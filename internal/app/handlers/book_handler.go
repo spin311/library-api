@@ -13,16 +13,16 @@ import (
 
 func GetBooks(w http.ResponseWriter, _ *http.Request) {
 	books, err := services.GetBooks()
-	if err != nil {
-		helpers.WriteErrorResponse(w, err, http.StatusInternalServerError)
+	if !models.IsHttpErrorEmpty(err) {
+		helpers.WriteHttpErrorResponse(w, err)
 		return
 	}
 	if len(books) == 0 {
 		books = []models.BookResponse{}
 	}
-	err = json.NewEncoder(w).Encode(books)
-	if err != nil {
-		helpers.WriteErrorResponse(w, err, http.StatusInternalServerError)
+	jsonErr := json.NewEncoder(w).Encode(books)
+	if jsonErr != nil {
+		helpers.WriteErrorResponse(w, jsonErr, http.StatusInternalServerError)
 		return
 	}
 }
@@ -40,11 +40,15 @@ func BorrowBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err := services.BorrowBook(userId, bookId)
-	if err != nil {
-		helpers.WriteErrorResponse(w, err, http.StatusInternalServerError)
+	if !models.IsHttpErrorEmpty(err) {
+		helpers.WriteHttpErrorResponse(w, err)
 		return
 	}
-	err = json.NewEncoder(w).Encode("book borrowed successfully")
+	jsonErr := json.NewEncoder(w).Encode("book borrowed successfully")
+	if jsonErr != nil {
+		helpers.WriteErrorResponse(w, jsonErr, http.StatusInternalServerError)
+		return
+	}
 }
 
 func GetBook(w http.ResponseWriter, r *http.Request) {
@@ -55,17 +59,17 @@ func GetBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if id <= 0 {
-		helpers.WriteErrorResponse(w, errors.New("invalid identifier"), http.StatusBadRequest)
+		helpers.WriteHttpErrorResponse(w, models.NewHttpError("invalid identifier", http.StatusBadRequest))
 		return
 	}
-	user, err := services.GetBook(id)
-	if err != nil {
+	user, httpError := services.GetBook(id)
+	if !models.IsHttpErrorEmpty(httpError) {
 		helpers.WriteErrorResponse(w, err, http.StatusInternalServerError)
 		return
 	}
-	err = json.NewEncoder(w).Encode(user)
-	if err != nil {
-		helpers.WriteErrorResponse(w, err, http.StatusInternalServerError)
+	jsonErr := json.NewEncoder(w).Encode(user)
+	if jsonErr != nil {
+		helpers.WriteErrorResponse(w, jsonErr, http.StatusInternalServerError)
 		return
 	}
 
@@ -83,10 +87,14 @@ func ReturnBook(w http.ResponseWriter, r *http.Request) {
 		helpers.WriteErrorResponse(w, errors.New("invalid identifier values"), http.StatusBadRequest)
 		return
 	}
-	err := services.ReturnBook(userId, bookId)
-	if err != nil {
-		helpers.WriteErrorResponse(w, err, http.StatusInternalServerError)
+	httpError := services.ReturnBook(userId, bookId)
+	if !models.IsHttpErrorEmpty(httpError) {
+		helpers.WriteHttpErrorResponse(w, httpError)
 		return
 	}
-	err = json.NewEncoder(w).Encode("book returned successfully")
+	jsonError := json.NewEncoder(w).Encode("book returned successfully")
+	if jsonError != nil {
+		helpers.WriteErrorResponse(w, jsonError, http.StatusInternalServerError)
+		return
+	}
 }

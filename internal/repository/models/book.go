@@ -11,3 +11,10 @@ type BookResponse struct {
 	Title          string `json:"title"`
 	AvailableCount int    `json:"quantity"`
 }
+
+func NewBookResponseFromBook(book Book) BookResponse {
+	return BookResponse{
+		Title:          book.Title,
+		AvailableCount: book.Quantity - book.BorrowedCount,
+	}
+}

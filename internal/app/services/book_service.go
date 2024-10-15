@@ -1,61 +1,49 @@
 package services
 
 import (
-	"errors"
-	"fmt"
 	"github.com/spin311/library-api/internal/repository/models"
 	"github.com/spin311/library-api/internal/repository/postgres"
+	"net/http"
 )
 
-func GetBooks() ([]models.BookResponse, error) {
-	return postgres.GetBooks()
+func GetBooks() ([]models.BookResponse, models.HttpError) {
+	httpError := models.NewEmptyHttpError()
+	books, httpError := postgres.GetBooks()
+	return books, httpError
 }
 
-func BorrowBook(userId int, bookId int) error {
+func BorrowBook(userId int, bookId int) models.HttpError {
 	book, err := postgres.GetBook(bookId)
-	if err != nil {
-		return fmt.Errorf("failed to retrieve book: %w", err)
+	if !models.IsHttpErrorEmpty(err) {
+		return err
 	}
 
 	availableBooks := book.Quantity - book.BorrowedCount
 	if availableBooks <= 0 {
-		return errors.New("no available copies of the book")
+		return models.NewHttpError("no available copies of the book", http.StatusBadRequest)
 	}
 
-	err = postgres.BorrowBook(userId, bookId, book.BorrowedCount+1)
-	if err != nil {
-		return fmt.Errorf("failed to borrow book: %w", err)
-	}
-
-	return nil
+	return postgres.BorrowBook(userId, bookId, book.BorrowedCount+1)
 }
 
-func GetBook(id int) (models.BookResponse, error) {
+func GetBook(id int) (models.BookResponse, models.HttpError) {
 	var bookResponse models.BookResponse
 	book, err := postgres.GetBook(id)
-	if err != nil {
-		return bookResponse, fmt.Errorf("failed to retrieve book: %w", err)
+	if !models.IsHttpErrorEmpty(err) {
+		return bookResponse, err
 	}
-
-	bookResponse.Title = book.Title
-	bookResponse.AvailableCount = book.Quantity - book.BorrowedCount
-	return bookResponse, nil
+	bookResponse = models.NewBookResponseFromBook(book)
+	return bookResponse, err
 }
 
-func ReturnBook(userId int, bookId int) error {
+func ReturnBook(userId int, bookId int) models.HttpError {
 	book, err := postgres.GetBook(bookId)
-	if err != nil {
-		return fmt.Errorf("failed to retrieve book: %w", err)
+	if !models.IsHttpErrorEmpty(err) {
+		return err
 	}
 
 	if book.BorrowedCount == 0 {
-		return errors.New("no borrowed copies of this book to return")
+		return models.NewHttpError("no borrowed copies of this book to return", http.StatusBadRequest)
 	}
-
-	err = postgres.ReturnBook(userId, bookId, book.BorrowedCount-1)
-	if err != nil {
-		return fmt.Errorf("failed to return book: %w", err)
-	}
-
-	return nil
+	return postgres.ReturnBook(userId, bookId, book.BorrowedCount-1)
 }

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/spin311/library-api/internal/repository/models"
+	"net/http"
 )
 
 var dbUser *sql.DB
@@ -12,19 +13,22 @@ func SetUserDB(database *sql.DB) {
 	dbUser = database
 }
 
-func InsertUser(user models.UserResponse) error {
+func InsertUser(user models.UserResponse) models.HttpError {
 	stmt, err := dbUser.Prepare(`INSERT INTO users (FIRST_NAME, LAST_NAME) VALUES ($1, $2)`)
 	if err != nil {
-		return err
+		return models.NewHttpErrorFromError("failed to prepare statement", err, http.StatusInternalServerError)
 	}
 	_, err = stmt.Exec(user.FirstName, user.LastName)
-	return err
+	if err != nil {
+		return models.NewHttpErrorFromError("failed to execute statement", err, http.StatusInternalServerError)
+	}
+	return models.NewEmptyHttpError()
 }
 
-func GetUsers() ([]models.UserResponse, error) {
+func GetUsers() ([]models.UserResponse, models.HttpError) {
 	rows, err := dbUser.Query(`SELECT FIRST_NAME, LAST_NAME FROM users`)
 	if err != nil {
-		return nil, err
+		return nil, models.NewHttpErrorFromError("failed to query users", err, http.StatusInternalServerError)
 	}
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
@@ -37,21 +41,21 @@ func GetUsers() ([]models.UserResponse, error) {
 	for rows.Next() {
 		var user models.UserResponse
 		if err := rows.Scan(&user.FirstName, &user.LastName); err != nil {
-			return nil, err
+			return nil, models.NewHttpErrorFromError("failed to scan user", err, http.StatusInternalServerError)
 		}
 		users = append(users, user)
 	}
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, models.NewHttpErrorFromError("failed to iterate over users", err, http.StatusInternalServerError)
 	}
-	return users, nil
+	return users, models.NewEmptyHttpError()
 }
 
-func GetUser(id int) (models.UserResponse, error) {
+func GetUser(id int) (models.UserResponse, models.HttpError) {
 	var user models.UserResponse
 	stmt, err := dbUser.Prepare(`SELECT FIRST_NAME, LAST_NAME FROM users WHERE ID = $1`)
 	if err != nil {
-		return user, err
+		return user, models.NewHttpErrorFromError("failed to prepare statement", err, http.StatusInternalServerError)
 	}
 	defer func(stmt *sql.Stmt) {
 		err := stmt.Close()
@@ -63,9 +67,9 @@ func GetUser(id int) (models.UserResponse, error) {
 	row := stmt.QueryRow(id)
 	if err := row.Scan(&user.FirstName, &user.LastName); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return user, errors.New("user not found")
+			return user, models.NewHttpError("user not found", http.StatusNotFound)
 		}
-		return user, err
+		return user, models.NewHttpErrorFromError("failed to scan user", err, http.StatusInternalServerError)
 	}
-	return user, nil
+	return user, models.NewEmptyHttpError()
 }

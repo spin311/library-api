@@ -23,9 +23,9 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = services.CreateUser(user)
-	if err != nil {
-		helpers.WriteErrorResponse(w, err, http.StatusInternalServerError)
+	httpErr := services.CreateUser(user)
+	if !models.IsHttpErrorEmpty(httpErr) {
+		helpers.WriteHttpErrorResponse(w, httpErr)
 		return
 	}
 
@@ -34,17 +34,17 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetUsers(w http.ResponseWriter, _ *http.Request) {
-	users, err := services.GetUsers()
-	if err != nil {
-		helpers.WriteErrorResponse(w, err, http.StatusInternalServerError)
+	users, httpErr := services.GetUsers()
+	if !models.IsHttpErrorEmpty(httpErr) {
+		helpers.WriteHttpErrorResponse(w, httpErr)
 		return
 	}
 	if len(users) == 0 {
 		users = []models.UserResponse{}
 	}
-	err = json.NewEncoder(w).Encode(users)
-	if err != nil {
-		helpers.WriteErrorResponse(w, err, http.StatusInternalServerError)
+	jsonErr := json.NewEncoder(w).Encode(users)
+	if jsonErr != nil {
+		helpers.WriteErrorResponse(w, jsonErr, http.StatusInternalServerError)
 		return
 	}
 }
@@ -60,9 +60,9 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 		helpers.WriteErrorResponse(w, errors.New("invalid identifier"), http.StatusBadRequest)
 		return
 	}
-	user, err := services.GetUser(id)
-	if err != nil {
-		helpers.WriteErrorResponse(w, err, http.StatusInternalServerError)
+	user, httpErr := services.GetUser(id)
+	if !models.IsHttpErrorEmpty(httpErr) {
+		helpers.WriteHttpErrorResponse(w, httpErr)
 		return
 	}
 	err = json.NewEncoder(w).Encode(user)
