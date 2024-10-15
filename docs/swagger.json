@@ -51,6 +51,7 @@
                 "parameters": [
                     {
                         "type": "integer",
+                        "example": 1,
                         "description": "Book ID",
                         "name": "bookId",
                         "in": "path",
@@ -171,6 +172,7 @@
                 "parameters": [
                     {
                         "type": "integer",
+                        "example": 5,
                         "description": "User ID",
                         "name": "userId",
                         "in": "path",
@@ -221,6 +223,7 @@
                 "parameters": [
                     {
                         "type": "integer",
+                        "example": 5,
                         "description": "User ID",
                         "name": "userId",
                         "in": "path",
@@ -228,6 +231,7 @@
                     },
                     {
                         "type": "integer",
+                        "example": 1,
                         "description": "Book ID",
                         "name": "bookId",
                         "in": "path",
@@ -278,6 +282,7 @@
                 "parameters": [
                     {
                         "type": "integer",
+                        "example": 5,
                         "description": "User ID",
                         "name": "userId",
                         "in": "path",
@@ -285,6 +290,7 @@
                     },
                     {
                         "type": "integer",
+                        "example": 1,
                         "description": "Book ID",
                         "name": "bookId",
                         "in": "path",

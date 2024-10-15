@@ -57,6 +57,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
+                        "example": 1,
                         "description": "Book ID",
                         "name": "bookId",
                         "in": "path",
@@ -177,6 +178,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
+                        "example": 5,
                         "description": "User ID",
                         "name": "userId",
                         "in": "path",
@@ -227,6 +229,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
+                        "example": 5,
                         "description": "User ID",
                         "name": "userId",
                         "in": "path",
@@ -234,6 +237,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
+                        "example": 1,
                         "description": "Book ID",
                         "name": "bookId",
                         "in": "path",
@@ -284,6 +288,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
+                        "example": 5,
                         "description": "User ID",
                         "name": "userId",
                         "in": "path",
@@ -291,6 +296,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
+                        "example": 1,
                         "description": "Book ID",
                         "name": "bookId",
                         "in": "path",

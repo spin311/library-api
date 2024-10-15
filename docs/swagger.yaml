@@ -64,6 +64,7 @@ paths:
       description: Get a book by book ID
       parameters:
       - description: Book ID
+        example: 1
         in: path
         name: bookId
         required: true
@@ -143,6 +144,7 @@ paths:
       description: Get a user by user ID
       parameters:
       - description: User ID
+        example: 5
         in: path
         name: userId
         required: true
@@ -176,11 +178,13 @@ paths:
       description: Borrow a book by user ID and book ID
       parameters:
       - description: User ID
+        example: 5
         in: path
         name: userId
         required: true
         type: integer
       - description: Book ID
+        example: 1
         in: path
         name: bookId
         required: true
@@ -214,11 +218,13 @@ paths:
       description: Return a book by user ID and book ID
       parameters:
       - description: User ID
+        example: 5
         in: path
         name: userId
         required: true
         type: integer
       - description: Book ID
+        example: 1
         in: path
         name: bookId
         required: true
