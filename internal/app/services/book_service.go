@@ -1,15 +1,14 @@
 package services
 
 import (
+	"fmt"
 	"github.com/spin311/library-api/internal/repository/models"
 	"github.com/spin311/library-api/internal/repository/postgres"
 	"net/http"
 )
 
 func GetBooks() ([]models.BookResponse, models.HttpError) {
-	httpError := models.NewEmptyHttpError()
-	books, httpError := postgres.GetBooks()
-	return books, httpError
+	return postgres.GetBooks()
 }
 
 func BorrowBook(userId int, bookId int) models.HttpError {
@@ -20,7 +19,7 @@ func BorrowBook(userId int, bookId int) models.HttpError {
 
 	availableBooks := book.Quantity - book.BorrowedCount
 	if availableBooks <= 0 {
-		return models.NewHttpError("no available copies of the book", http.StatusBadRequest)
+		return models.NewHttpError(fmt.Sprintf("no available copies of the book with ID %d and title '%s'", book.ID, book.Title), http.StatusBadRequest)
 	}
 
 	return postgres.BorrowBook(userId, bookId, book.BorrowedCount+1)
@@ -43,7 +42,7 @@ func ReturnBook(userId int, bookId int) models.HttpError {
 	}
 
 	if book.BorrowedCount == 0 {
-		return models.NewHttpError("no borrowed copies of this book to return", http.StatusBadRequest)
+		return models.NewHttpError(fmt.Sprintf("no borrowed copies of the book with ID %d to return", book.ID), http.StatusBadRequest)
 	}
 	return postgres.ReturnBook(userId, bookId, book.BorrowedCount-1)
 }

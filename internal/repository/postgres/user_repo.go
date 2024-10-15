@@ -3,6 +3,7 @@ package postgres
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/spin311/library-api/internal/repository/models"
 	"net/http"
 )
@@ -25,8 +26,8 @@ func InsertUser(user models.UserResponse) models.HttpError {
 	return models.NewEmptyHttpError()
 }
 
-func GetUsers() ([]models.UserResponse, models.HttpError) {
-	rows, err := dbUser.Query(`SELECT FIRST_NAME, LAST_NAME FROM users`)
+func GetUsers() ([]models.User, models.HttpError) {
+	rows, err := dbUser.Query(`SELECT ID, FIRST_NAME, LAST_NAME FROM users`)
 	if err != nil {
 		return nil, models.NewHttpErrorFromError("failed to query users", err, http.StatusInternalServerError)
 	}
@@ -37,10 +38,10 @@ func GetUsers() ([]models.UserResponse, models.HttpError) {
 		}
 	}(rows)
 
-	var users []models.UserResponse
+	var users []models.User
 	for rows.Next() {
-		var user models.UserResponse
-		if err := rows.Scan(&user.FirstName, &user.LastName); err != nil {
+		var user models.User
+		if err := rows.Scan(&user.ID, &user.FirstName, &user.LastName); err != nil {
 			return nil, models.NewHttpErrorFromError("failed to scan user", err, http.StatusInternalServerError)
 		}
 		users = append(users, user)
@@ -51,9 +52,9 @@ func GetUsers() ([]models.UserResponse, models.HttpError) {
 	return users, models.NewEmptyHttpError()
 }
 
-func GetUser(id int) (models.UserResponse, models.HttpError) {
-	var user models.UserResponse
-	stmt, err := dbUser.Prepare(`SELECT FIRST_NAME, LAST_NAME FROM users WHERE ID = $1`)
+func GetUser(id int) (models.User, models.HttpError) {
+	var user models.User
+	stmt, err := dbUser.Prepare(`SELECT ID, FIRST_NAME, LAST_NAME FROM users WHERE ID = $1`)
 	if err != nil {
 		return user, models.NewHttpErrorFromError("failed to prepare statement", err, http.StatusInternalServerError)
 	}
@@ -65,9 +66,9 @@ func GetUser(id int) (models.UserResponse, models.HttpError) {
 	}(stmt)
 
 	row := stmt.QueryRow(id)
-	if err := row.Scan(&user.FirstName, &user.LastName); err != nil {
+	if err := row.Scan(&user.ID, &user.FirstName, &user.LastName); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return user, models.NewHttpError("user not found", http.StatusNotFound)
+			return user, models.NewHttpError(fmt.Sprintf("user with ID %d not found", id), http.StatusNotFound)
 		}
 		return user, models.NewHttpErrorFromError("failed to scan user", err, http.StatusInternalServerError)
 	}

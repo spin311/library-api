@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/spin311/library-api/internal/repository/models"
 	"net/http"
 )
@@ -15,7 +16,7 @@ func SetBookDB(database *sql.DB) {
 }
 
 func GetBooks() ([]models.BookResponse, models.HttpError) {
-	stmt, err := dbBook.Prepare(`SELECT TITLE, QUANTITY, BORROWED_COUNT FROM books`)
+	stmt, err := dbBook.Prepare(`SELECT ID, TITLE, QUANTITY, BORROWED_COUNT FROM books`)
 	if err != nil {
 		return nil, models.NewHttpErrorFromError("failed to prepare statement", err, http.StatusInternalServerError)
 	}
@@ -41,7 +42,7 @@ func GetBooks() ([]models.BookResponse, models.HttpError) {
 	for rows.Next() {
 		var book models.BookResponse
 		var quantity, borrowedCount int
-		if err := rows.Scan(&book.Title, &quantity, &borrowedCount); err != nil {
+		if err := rows.Scan(&book.ID, &book.Title, &quantity, &borrowedCount); err != nil {
 			return nil, models.NewHttpErrorFromError("failed to scan row", err, http.StatusInternalServerError)
 		}
 		book.AvailableCount = quantity - borrowedCount
@@ -180,7 +181,7 @@ func ReturnBook(userId int, bookId int, newCount int) models.HttpError {
 	}
 	if rowsAffected == 0 {
 		_ = tx.Rollback()
-		return models.NewHttpError("no borrowed books found for this user", http.StatusBadRequest)
+		return models.NewHttpError(fmt.Sprintf("no borrowed books found for user ID %d and book ID %d", userId, bookId), http.StatusBadRequest)
 	}
 
 	err = updateBookCountWithTx(tx, bookId, newCount)

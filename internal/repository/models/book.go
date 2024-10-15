@@ -8,12 +8,14 @@ type Book struct {
 }
 
 type BookResponse struct {
+	ID             int    `json:"id"`
 	Title          string `json:"title"`
 	AvailableCount int    `json:"quantity"`
 }
 
 func NewBookResponseFromBook(book Book) BookResponse {
 	return BookResponse{
+		ID:             book.ID,
 		Title:          book.Title,
 		AvailableCount: book.Quantity - book.BorrowedCount,
 	}

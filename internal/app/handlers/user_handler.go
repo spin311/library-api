@@ -40,7 +40,7 @@ func GetUsers(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 	if len(users) == 0 {
-		users = []models.UserResponse{}
+		users = []models.User{}
 	}
 	jsonErr := json.NewEncoder(w).Encode(users)
 	if jsonErr != nil {
