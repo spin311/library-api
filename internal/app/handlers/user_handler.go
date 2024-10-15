@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/spin311/library-api/internal/app/helpers"
@@ -31,7 +30,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if user.FirstName == "" || user.LastName == "" {
-		helpers.WriteErrorResponse(w, errors.New("first_name and last_name parameters are required"), http.StatusBadRequest)
+		helpers.WriteHttpErrorResponse(w, models.NewHttpError("first_name and last_name parameters are required", http.StatusBadRequest))
 		return
 	}
 
@@ -88,7 +87,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if id <= 0 {
-		helpers.WriteErrorResponse(w, errors.New("invalid identifier"), http.StatusBadRequest)
+		helpers.WriteHttpErrorResponse(w, models.NewHttpError("invalid identifier", http.StatusBadRequest))
 		return
 	}
 	user, httpErr := services.GetUser(id)

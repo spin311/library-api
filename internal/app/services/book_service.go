@@ -32,7 +32,7 @@ func ReturnBook(userId int, bookId int) models.HttpError {
 	}
 
 	if book.BorrowedCount == 0 {
-		return models.NewHttpError(fmt.Sprintf("no borrowed copies of the book with ID %d to return", book.ID), http.StatusBadRequest)
+		return models.NewHttpError(fmt.Sprintf("no borrowed copies exist for the book with ID %d", book.ID), http.StatusBadRequest)
 	}
 	return postgres.ReturnBook(userId, bookId, book.BorrowedCount-1)
 }

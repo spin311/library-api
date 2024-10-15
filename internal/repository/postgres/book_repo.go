@@ -79,7 +79,9 @@ func GetBook(bookId int) (models.Book, models.HttpError) {
 	return book, models.NewEmptyHttpError()
 }
 
+// BorrowBook updates the borrowed count for the book and creates a new borrow record
 func BorrowBook(userId int, bookId int) models.HttpError {
+	// Begin transaction to ensure atomicity
 	ctx := context.Background()
 	tx, err := dbBook.BeginTx(ctx, nil)
 	if err != nil {
@@ -165,13 +167,16 @@ func updateBookCountWithTx(tx *sql.Tx, bookId int, newCount int) error {
 	return nil
 }
 
+// ReturnBook updates the borrowed count for the book and sets the return date for the borrow record
 func ReturnBook(userId int, bookId int, newCount int) models.HttpError {
+	// Begin transaction to ensure atomicity
 	ctx := context.Background()
 	tx, err := dbBook.BeginTx(ctx, nil)
 	if err != nil {
 		return models.NewHttpErrorFromError("failed to begin transaction", err, http.StatusInternalServerError)
 	}
 
+	// update return date for the borrowed book
 	stmtReturn, err := tx.PrepareContext(ctx, `
 		WITH borrowed AS (
 			SELECT id 
