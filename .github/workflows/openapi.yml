@@ -19,7 +19,12 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: '1.23.2'
+          go-version: '1.26'
+
+      - name: Build and vet
+        run: |
+          go build ./...
+          go vet ./...
 
       - name: Install Swagger
         run: |
@@ -29,11 +34,17 @@ jobs:
         run: |
           swag init -g cmd/api/main.go -o docs
 
+      # A pull request can't push, and an unchanged docs/ has nothing to commit: both used to fail the job.
       - name: Commit and Push Swagger docs
+        if: github.event_name == 'push'
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add docs/
+          if git diff --cached --quiet; then
+            echo "Swagger docs are up to date."
+            exit 0
+          fi
           git commit -m 'Generate and update Swagger docs'
           git push
         env:
