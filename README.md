@@ -6,13 +6,13 @@ API for a simple library, written in Go.
 
 ## Technologies Used
 
-- **Go**: Programming language used for the API. (v1.25)
+- **Go**: Programming language used for the API. (v1.26)
 - **PostgreSQL**: Database used for storing data.
 - **Swagger**: For API documentation.
 - **GitHub Actions**: For CI/CD pipeline for generating swagger documentation.
 
 ## Requirements
-- Go 1.25 or higher
+- Go 1.26 or higher
 - PostgreSQL database
 - `migrate` tool for database migrations
 ## Local Installation
